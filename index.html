@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		<script src='perlin.js' type="module"></script>
+		<script id="vertexShader" type="x-shader/x-fragment"> 
+			varying float y;
+			vec3 dir;
+			float camFacingDir;
+			varying vec3 rNormal;
+
+			void main()	{
+				rNormal = normalMatrix * normal; // calculate normal
+				y = position[2]; // get y position of vertex
+
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
+			}
+		</script>
+		<script id="fragmentShader" type="x-shader/x-fragment"> 
+			varying float y;
+			float shadeFactor;
+			uniform vec3 lightDir;
+			varying vec3 rNormal;
+
+			void main()	{
+				if (gl_FrontFacing) {
+					shadeFactor = -rNormal[0] * lightDir[0] + -rNormal[1] * lightDir[1] + -rNormal[2] * lightDir[2];
+				} else {
+					shadeFactor = rNormal[0] * lightDir[0] + rNormal[1] * lightDir[1] + rNormal[2] * lightDir[2];
+				}
+				if (y > 0.0) {
+					gl_FragColor = vec4(vec3(0.0, 1.0 * shadeFactor, 0.0), 1.0);
+				} else {
+					gl_FragColor = vec4(vec3(0.0, 0.0, 1.0 * shadeFactor), 1.0);
+				}
+			}
+		</script>
+		<script type="module" src="/main.js"></script>
+		
+	</body>
+</html>
+
