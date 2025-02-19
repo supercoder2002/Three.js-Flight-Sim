@@ -23,9 +23,6 @@ scene.background = new THREE.Color(0x005ff1)
 const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
 camera.position.y = 1;
 
-
-
-
 // --- Ground with shader material ---
 const terrainSize = 100;
 const terrainOffset = 20;
@@ -147,9 +144,12 @@ var fpss = [60, 60, 60]
 function animate() {
 	x += 0.1
 	// update plane
+	// if (x > 20) {
+	// 	renderer.setAnimationLoop(null)
+	// }
 
 	plane.changeThrust(1)
-	plane.update(avgFPS, runway)
+	plane.update(60, runway)
 
 	// measure fps
 	timeNow = performance.now();
@@ -164,7 +164,7 @@ function animate() {
 	// Update HUD graphics
 	hudDisplay.clearRect(0, 0, width, height);
 	hudDisplay.fillText(Math.round(plane.airspeed * 100) / 100, width/2, height/2);
-	hudDisplay.fillText(Math.round(plane.plane.position.z * 100) / 100, width/2, height/2  - 100);
+	hudDisplay.fillText(Math.round(plane.plane.position.y * 100) / 100, width/2, height/2  - 100);
 	hudTexture.needsUpdate = true;
 	
 	// Render scene
@@ -177,7 +177,7 @@ function animate() {
 // when plane is finished loading
 function finishedLoading() {
 	document.addEventListener("keydown", keypress)
-	plane.plane.position.z = 3700
+	//plane.plane.position.z = 3700
 	mainLoop();
 }
 
@@ -203,15 +203,20 @@ function keypress() {
 		plane.changeRotation(new THREE.Euler(-0.1 * (plane.airspeed / 275), 0, 0))
 	} else if (event.key == "ArrowDown") {
 		plane.changeRotation(new THREE.Euler(0.1 * (plane.airspeed / 275), 0, 0))
+		//plane.targetRotation.x += 0.1
 	} else if (event.key == "ArrowLeft") {
-		plane.changeRotation(new THREE.Euler(0, 0.1 * (plane.airspeed / 275), -0.1 * (plane.airspeed / 275)))
+		plane.changeRotation(new THREE.Euler(0, 0, 0.1 * (plane.airspeed / 275)))
 	} else if (event.key == "ArrowRight") {
-		plane.changeRotation(new THREE.Euler(0, -0.1 * (plane.airspeed / 275), 0.1 * (plane.airspeed / 275)))
+		plane.changeRotation(new THREE.Euler(0, 0, -0.1 * (plane.airspeed / 275)))
 	} else if (event.key == "z") {
 		plane.changeRotation(new THREE.Euler(0, 0.1 * (plane.airspeed / 275), 0))
 	} else if (event.key == "c") {
 		plane.changeRotation(new THREE.Euler(0, -0.1 * (plane.airspeed / 275), 0))
 	} else if (event.key == "m") {
 		renderer.setAnimationLoop(null)
+	} else if (event.key == "f") {
+		plane.setFlaps(30)
+	} else if (event.key == "r") {
+		plane.setFlaps(0)
 	}
 }
