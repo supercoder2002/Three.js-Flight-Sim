@@ -47,10 +47,22 @@ function calculateThrust(thrustForce, mass, thrustDirection) {
 }
 
 // calculates drag (Cd = coefficient of drag, area = area of wing surface)
-function calculateDrag(mass, velocity, Cd, area, dragDirection) {
-	var drag = (0.5 * velocity * velocity * Cd * area) / mass
+function calculateDrag(mass, airDensity, velocity, Cd, area, dragDirection) {
+	var drag = (0.5 * (velocity ** 2) * airDensity * Cd * area) / mass
 	var dragAcceleration = new THREE.Vector3(dragDirection.x * drag, dragDirection.y * drag, dragDirection.z * drag);
+	//console.log(drag * mass)
 	return dragAcceleration
+}
+
+// // calculates friction (N = normal force, μ = friction coefficient)
+function calculateFriction(N, μ, velocity, mass) {
+	var frictionPower = -N * μ
+	let frictionDirection = velocity.clone().negate().normalize()
+
+	let friction = frictionDirection.clone().multiplyScalar(frictionPower)
+
+	var frictionAcceleration = frictionDirection.clone().multiplyScalar(1/mass);
+	return frictionAcceleration
 }
 
 // calculates the value of linear integration based on integral of y=mx+c
@@ -61,12 +73,35 @@ function calculateLinearIntegration(m, c, b1 = 1, b0 = 0) {
 	return integration1 - integration0
 }
 
+function calculateLift(mass, airDensity, velocity, Cl, area, rightDirection) {
+	//console.log(rightDirection)
+	let liftVelocity = velocity.clone().projectOnPlane(rightDirection)
+	let liftPower = Cl * 1/2 * airDensity * (liftVelocity.length() ** 2) * area
+
+	let n = new THREE.Vector3(rightDirection.y, 0, rightDirection.x)
+
+	let liftDirection = liftVelocity.clone().normalize().cross(n)
+
+	let liftForce = liftDirection.normalize().multiplyScalar(liftPower)
+
+	let dragPower = (Cl ** 2) / (Math.PI * area / 16 * 9) // Induced Drag equals Cl squared divided by pi * aspect ratio * efficiency 
+	console.log(dragPower)
+	let dragDirection = liftVelocity.clone().negate().normalize()
+	let dragForce = dragDirection.clone().multiplyScalar(dragPower)
+
+	let totalForce = new THREE.Vector3().addVectors(liftForce, dragForce)
+
+	var totalAcceleration = new THREE.Vector3(totalForce.x / mass, totalForce.y / mass, totalForce.z / mass);
+	//console.log(totalAcceleration)
+
+	return totalAcceleration
+}
+
 
 class OBB {
 	constructor(position, size, rotation, scene) {
 		this.AABB = new THREE.Box3();
 		this.AABB.setFromCenterAndSize(position, size);
-		this.rotation = rotation
 		this.size = size
 		this.i = 0
 
@@ -79,7 +114,7 @@ class OBB {
 
 		this.OBBMesh = new THREE.Mesh(OBBGeometry, OBBMaterial);
 		this.OBBMesh.position.copy(position)
-		this.OBBMesh.rotation.copy(rotation)
+		this.OBBMesh.setRotationFromQuaternion(rotation)
 		scene.add(this.OBBMesh);
 		this.scene = scene
 	}
@@ -87,24 +122,26 @@ class OBB {
 	setOrientation(position = this.position, rotation = this.rotation, relativeTo = this.position) {
 		this.AABB.setFromCenterAndSize(position, this.size);
 		var rot = new THREE.Matrix4()
-		rot.makeRotationFromEuler(rotation)
+		rot.makeRotationFromQuaternion(rotation)
 		var newPos = new THREE.Vector3()
 		newPos.subVectors(position, relativeTo)
 		newPos.applyMatrix4(rot)
 		newPos.add(relativeTo)
 
 		this.OBBMesh.position.copy(newPos)
-		this.OBBMesh.rotation.copy(rotation)
+		this.OBBMesh.setRotationFromQuaternion(rotation)
 		this.position.copy(newPos)
 		this.AABB.setFromCenterAndSize(newPos, this.size)
 		this.rotation.copy(rotation)
+		//console.log(rotation)
 	}
 
 	checkMeshColliding(mesh) {
 		this.i += 1
 		var l = 0 
 		let rotMat = new THREE.Matrix4()
-		rotMat.makeRotationFromEuler(this.rotation)
+		//console.log(this.rotation)
+		rotMat.makeRotationFromQuaternion(this.rotation)
 		rotMat.invert()
 
 		let translation = new THREE.Vector3().subVectors(mesh.position, this.position)
@@ -176,4 +213,44 @@ function lerpEuler(current, target, f) {
 	return diff
 }
 
-export {loadObjects, glbLoader, calculateThrust, calculateDrag, lerpEuler, OBB, calculateLinearIntegration};
+function calculateLiftCoefficent(AoA) {
+    let scaleAoA = AoA / 1.5707
+    let inverted = false
+
+    
+    if ((scaleAoA > 2) && (scaleAoA < -2))  {
+        return null
+    }
+    
+    if ((scaleAoA > 1) && (scaleAoA < 2))  {
+        inverted = true
+        scaleAoA = scaleAoA - 2
+    }
+    else if ((scaleAoA > -2) && (scaleAoA < -1))  {
+        inverted = true
+        scaleAoA = scaleAoA + 2
+    }
+
+    //console.log(AoA, inverted)
+    
+    //console.log(scaleAoA)
+    let nonInverted = 0
+    
+    if ((scaleAoA <= 0.3) && (scaleAoA >= -0.3)) {
+        nonInverted = Math.sin(scaleAoA * 10) + 0.02
+    } 
+    else if ((scaleAoA < -0.3) && (scaleAoA > -1)) {
+        nonInverted = (-(1 / (scaleAoA - 0.84))) ** 6 + 0.025
+    }
+    else if ((scaleAoA < 1) && (scaleAoA > 0.3)) {
+        nonInverted = (1 / (scaleAoA + 0.84)) ** 6 - 0.025
+    }
+    
+    if (inverted) {
+        return -nonInverted * 2
+    } else {
+        return nonInverted * 2
+    }
+}
+
+export {loadObjects, glbLoader, calculateThrust, calculateDrag, lerpEuler, OBB, calculateLinearIntegration, calculateLiftCoefficent, calculateLift, calculateFriction};
