@@ -93,7 +93,7 @@ const runwayTexture = textureLoader.load('./resources/runway.png'); // load runw
 const runwayMaterial = new THREE.MeshBasicMaterial({map : runwayTexture}); // runway material
 
 // create runway
-const runwayGeometry = new THREE.BoxGeometry(7500, 1, 100); 
+const runwayGeometry = new THREE.BoxGeometry(7500, 2, 100); 
 const runwaySideMaterial = new THREE.MeshBasicMaterial( {color: 0x555555} ); 
 const runway = new THREE.Mesh(runwayGeometry, [runwaySideMaterial, runwaySideMaterial, runwayMaterial, runwaySideMaterial, runwaySideMaterial, runwaySideMaterial]); 
 runway.rotation.y = 1.5707
@@ -137,6 +137,7 @@ var plane = new THREE.Mesh( planeGeometry, hudMaterial );
 sceneHUD.add(plane);
 
 
+
 // animation function
 var x = 0
 var avgFPS = 60
@@ -148,7 +149,7 @@ function animate() {
 	// 	renderer.setAnimationLoop(null)
 	// }
 
-	plane.changeThrust(1)
+	
 	plane.update(60, runway)
 
 	// measure fps
@@ -163,7 +164,7 @@ function animate() {
 
 	// Update HUD graphics
 	hudDisplay.clearRect(0, 0, width, height);
-	hudDisplay.fillText(Math.round(plane.airspeed * 100) / 100, width/2, height/2);
+	hudDisplay.fillText((Math.round(plane.airspeed * 1.944 * 100) / 100).toString() + " knots", width/2, height/2);
 	hudDisplay.fillText(Math.round(plane.plane.position.y * 100) / 100, width/2, height/2  - 100);
 	hudTexture.needsUpdate = true;
 	
@@ -193,7 +194,7 @@ function mainLoop() {
 }
 
 // load plane with async function
-var plane = new Plane(scene, 'resources/airplane/plane3.glb', 'plane2', function () {renderer.setAnimationLoop(null);}, () => finishedLoading(), () => errorLoading())
+var plane = new Plane(scene, 'resources/airplane/plane3.glb', 'plane3', function () {renderer.setAnimationLoop(null);}, () => finishedLoading(), () => errorLoading())
 plane.initPlane()
 
 
@@ -215,8 +216,29 @@ function keypress() {
 	} else if (event.key == "m") {
 		renderer.setAnimationLoop(null)
 	} else if (event.key == "f") {
-		plane.setFlaps(30)
+		plane.setFlaps(15)
 	} else if (event.key == "r") {
 		plane.setFlaps(0)
+	} else if (event.key == "9") {
+		plane.changeThrust(1)
+	} else if (event.key == "8") {
+		plane.changeThrust(0.88)
+	} else if (event.key == "7") {
+		plane.changeThrust(0.77)
+	} else if (event.key == "6") {
+		plane.changeThrust(0.66)
+	} else if (event.key == "5") {
+		plane.changeThrust(0.55)
+	} else if (event.key == "4") {
+		plane.changeThrust(0.44)
+	} else if (event.key == "3") {
+		plane.changeThrust(0.33)
+	} else if (event.key == "2") {
+		plane.changeThrust(0.22)
+	} else if (event.key == "1") {
+		plane.changeThrust(0.11)
+	} else if (event.key == "0") {
+		plane.changeThrust(0)
 	}
 }
+
