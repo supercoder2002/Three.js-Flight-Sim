@@ -120,7 +120,8 @@ class Plane {
 	calculateAoA() {
 		let velocity = new THREE.Vector3().subVectors(this.plane.position, this.oldPos)
 		let lateralSpeed = new THREE.Vector3(velocity.x, 0, velocity.z).length()
-		this.aoa = 0.026 + this.rotation.x + Math.atan2(velocity.y, lateralSpeed)
+		this.aoa = 0.026 + this.rotation.x - Math.atan2(velocity.y, lateralSpeed)
+		//console.log(velocity)
 	}
 
 	changeRotation(rotationChange) {
@@ -130,8 +131,9 @@ class Plane {
 
 	// update plane position and velocity
 	update(fps, r) {
-		this.calculateAoA()
-		this.actualVelocity = new THREE.Vector3().subVectors(this.plane.position, this.oldPos).multiplyScalar(fps / 3.821)
+		this.calculateAoA() // calculates angle of attack
+
+		this.actualVelocity = new THREE.Vector3().subVectors(this.plane.position, this.oldPos).multiplyScalar(fps / 3.821) // converts velocity to m/s
 		this.oldPos = this.plane.position.clone()
 		var vb = this.velocity.length()
 
@@ -139,6 +141,7 @@ class Plane {
 		backward.copy(new THREE.Vector3(0, 0, 1))
 		forward.applyQuaternion(this.rotation).normalize()
 		backward.applyQuaternion(this.rotation).normalize()
+		//console.log(forward)
 
 
 		var ab = this.acceleration.length()
@@ -146,31 +149,30 @@ class Plane {
 
 		this.thrustLevel += (this.goalThrustLevel - this.thrustLevel) * 0.1
 
-		var thrustForce = this.thrustLevel * 2275; // max thrust is 2275 N
-		this.acceleration.add(calculateThrust(thrustForce, 757, forward));
-
-		var dragAccel = calculateDrag(757, 1.225, this.actualVelocity.length(), 0.03, 16, backward)
-		this.acceleration.add(dragAccel);
+		var thrustForce = this.thrustLevel * 2255; // max thrust is 2255 N
+		this.acceleration.add(calculateThrust(thrustForce, 762, forward));
 
 		let liftCoefficent = calculateLiftCoefficent(this.aoa)
-		//console.log(this.aoa, liftCoefficent)
+
+		var dragAccel = calculateDrag(762, 1.225, this.actualVelocity.length(), 0.029 + 0.046 * this.aoa, 16, backward)
+		this.acceleration.add(dragAccel);
+		
 		if (this.flaps > 0) {
 			liftCoefficent = liftCoefficent * 2.1 * (this.flaps/30)
 		} else {
 			liftCoefficent = 1.6 * liftCoefficent
 		}
-		var liftAccel = calculateLift(757, 1.225, this.actualVelocity, liftCoefficent, 16, new THREE.Vector3(forward.x, forward.z, -forward.y))
-		//console.log(liftAccel)
+
+		var liftAccel = calculateLift(762, 1.225, this.actualVelocity, liftCoefficent, 16, new THREE.Vector3(forward.x, forward.z, -forward.y))
 		this.acceleration.add(liftAccel)
 
 		this.acceleration.y += -9.8 
-		//console.log(this.acceleration, liftAccel)
-
 
 		if (this.onRunway) {
-			let frictionAccel = calculateFriction(this.acceleration.y * 757, 0.7, this.actualVelocity, 757)
+			let frictionAccel = calculateFriction(this.acceleration.y * 762, 0.01, this.actualVelocity, 762)
 			this.acceleration.add(frictionAccel)
 		}
+		//console.log(this.acceleration, calculateThrust(thrustForce, 7148, forward), liftAccel)
 
 		//console.log(this.acceleration.y)
 		//console.log(this.velocity)
@@ -199,7 +201,7 @@ class Plane {
 		oldRotation.slerp(this.targetRotation.clone().invert(), 0.9 * 1 / fps)
 		this.updateRelativeObjects();
 
-		let iVelocity = frameVelocity.clone().multiplyScalar(0.1 * 3.821)
+		let iVelocity = frameVelocity.clone().multiplyScalar(0.1 * 3.821) // converts back to ft/s
 
 		for (let i = 0; i < 10; i++) {
 			this.plane.position.add(iVelocity);
@@ -265,7 +267,7 @@ class Plane {
 		this.updateRelativeObjects()
 		//console.log(this.rotation)
 		this.plane.setRotationFromQuaternion(this.rotation)
-		this.airspeed = new THREE.Vector3().subVectors(this.plane.position, this.oldPos).length() * fps * 0.592
+		this.airspeed = new THREE.Vector3().subVectors(this.plane.position, this.oldPos).length() * (fps / 3.821)
 	}
 
 	updateRelativeObjects() {
