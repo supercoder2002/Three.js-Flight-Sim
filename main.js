@@ -117,7 +117,7 @@ hudCanvas.height = height;
 var hudDisplay = hudCanvas.getContext('2d');
 hudDisplay.font = "Normal 40px Arial";
 hudDisplay.textAlign = 'center';
-hudDisplay.fillStyle = "rgba(250, 250, 250, 1)";
+hudDisplay.fillStyle = "rgba(0, 0, 0, 1)";
 hudDisplay.fillText('Initializing...', width / 2, height / 2);
  
 // HUD camera and scene
@@ -133,8 +133,8 @@ hudMaterial.transparent = true;
 
 // Create plane that renders HUD
 var planeGeometry = new THREE.PlaneGeometry( width, height );
-var plane = new THREE.Mesh( planeGeometry, hudMaterial );
-sceneHUD.add(plane);
+var HUDplane = new THREE.Mesh( planeGeometry, hudMaterial );
+sceneHUD.add(HUDplane);
 
 
 
@@ -164,8 +164,9 @@ function animate() {
 
 	// Update HUD graphics
 	hudDisplay.clearRect(0, 0, width, height);
-	hudDisplay.fillText((Math.round(plane.airspeed * 1.944 * 100) / 100).toString() + " knots", width/2, height/2);
-	hudDisplay.fillText(Math.round(plane.plane.position.y * 100) / 100, width/2, height/2  - 100);
+	hudDisplay.fillText((Math.round(plane.airspeed * 1.944 * 100) / 100).toString() + " knots", width/2 - 500, height/2 - 300);
+	hudDisplay.fillText("Altitude: " + (Math.round(plane.plane.position.y * 100) / 100).toString() + "ft", width/2 + 500, height/2  - 300);
+	hudDisplay.fillText("AoA: " + Math.round(plane.aoa * 180 / Math.PI).toString() + " degrees", width/2, height/2  - 300);
 	hudTexture.needsUpdate = true;
 	
 	// Render scene
@@ -241,4 +242,3 @@ function keypress() {
 		plane.changeThrust(0)
 	}
 }
-
