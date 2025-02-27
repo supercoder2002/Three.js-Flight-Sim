@@ -154,7 +154,7 @@ class Plane {
 
 		let liftCoefficent = calculateLiftCoefficent(this.aoa)
 
-		var dragAccel = calculateDrag(762, 1.225, this.actualVelocity.length(), 0.029 + 0.046 * this.aoa, 16, backward)
+		var dragAccel = calculateDrag(762, 1.225, this.actualVelocity.length(), 0.029 + 0.046 * this.aoa + 0.05 * (this.flaps/15), 16, backward)
 		this.acceleration.add(dragAccel);
 		
 		if (this.flaps > 0) {
