@@ -7,7 +7,7 @@ const glbLoader = new GLTFLoader();
 
 	Cessna 172 weighs 1680 lbs in empty configuration (762 kg)
 	Takeoff speed of a Cessna 172 is 55 knots (28 m/s)
-    Stall speed of Cessna with flaps down is 48 knots (24 m/s)
+	Stall speed of Cessna with flaps down is 48 knots (24 m/s)
 	Stall speed of Cessna without flaps is 40 knots (21 m/s)
 	
 */
@@ -79,12 +79,12 @@ function calculateLinearIntegration(m, c, b1 = 1, b0 = 0) {
 
 function calculateLift(mass, airDensity, velocity, Cl, area, rightDirection) {
 	let liftVelocity = velocity.clone().projectOnPlane(rightDirection.normalize())
+	
 	let liftPower = Cl * 1/2 * airDensity * (liftVelocity.length() ** 2) * area
 
 	let n = new THREE.Vector3(rightDirection.y, 0, rightDirection.x).normalize()
 
 	let liftDirection = liftVelocity.clone().normalize().cross(n)
-	console.log(liftDirection)
 
 	let liftForce = liftDirection.normalize().multiplyScalar(liftPower)
 
@@ -217,45 +217,42 @@ function lerpEuler(current, target, f) {
 	return diff
 }
 
-function calculateLiftCoefficent(AoA) {
-    let scaleAoA = AoA / 1.5707
-    let inverted = false
+function calculateLiftCoefficent(AoA, flaps) {
+	let scaleAoA = AoA / 1.5707
+	let inverted = false
+	
+	if ((scaleAoA > 2) && (scaleAoA < -2))  {
+		return null
+	}
+	
+	if ((scaleAoA > 1) && (scaleAoA < 2))  {
+		inverted = true
+		scaleAoA = scaleAoA - 2
+	}
+	else if ((scaleAoA > -2) && (scaleAoA < -1))  {
+		inverted = true
+		scaleAoA = scaleAoA + 2
+	}
 
-    //console.log(scaleAoA)
-    
-    if ((scaleAoA > 2) && (scaleAoA < -2))  {
-        return null
-    }
-    
-    if ((scaleAoA > 1) && (scaleAoA < 2))  {
-        inverted = true
-        scaleAoA = scaleAoA - 2
-    }
-    else if ((scaleAoA > -2) && (scaleAoA < -1))  {
-        inverted = true
-        scaleAoA = scaleAoA + 2
-    }
+	let stallAoA = 0.2 - 0.0025 * flaps
+	let maxLiftCoefficent = 1.6 + 0.0125 * flaps
 
-    //console.log(AoA, inverted)
-    
-    //console.log(scaleAoA)
-    let nonInverted = 0
-    
-    if ((scaleAoA <= 0.2) && (scaleAoA >= -0.2)) {
-        nonInverted = Math.sin(scaleAoA * 10) + 0.02
-    } 
-    else if ((scaleAoA < -0.2) && (scaleAoA > -1)) {
-        nonInverted = (-(1 / (scaleAoA - 0.84))) ** 6 + 0.025
-    }
-    else if ((scaleAoA < 1) && (scaleAoA > 0.2)) {
-        nonInverted = (1 / (scaleAoA + 0.84)) ** 6 - 0.025
-    }
-    
-    if (inverted) {
-        return -nonInverted * 2
-    } else {
-        return nonInverted * 2
-    }
+	let nonInverted = 0
+	if (scaleAoA < 0.175) {
+		nonInverted = 8.7 * (scaleAoA + 0.0025 * flaps) + 0.26 + 0.0125 * flaps
+	} else {
+		nonInverted = -1.9 * (scaleAoA + 0.0025 * flaps) + 1.89 + 0.0125 * flaps
+	}
+
+	if (nonInverted < 0) {
+		nonInverted = 0
+	}
+	
+	if (inverted) {
+		return -nonInverted * 2
+	} else {
+		return nonInverted * 2
+	}
 }
 
 export {loadObjects, glbLoader, calculateThrust, calculateDrag, lerpEuler, OBB, calculateLinearIntegration, calculateLiftCoefficent, calculateLift, calculateFriction};
