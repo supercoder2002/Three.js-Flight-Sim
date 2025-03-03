@@ -161,12 +161,26 @@ function animate() {
 	fpss.pop()
 	avgFPS = (fpss[0] + fpss[1] + fpss[2]) / 3
 
+	hudDisplay.fillStyle = "black";
 
 	// Update HUD graphics
 	hudDisplay.clearRect(0, 0, width, height);
-	hudDisplay.fillText((Math.round(plane.airspeed * 1.944 * 100) / 100).toString() + " knots", width/2 - 500, height/2 - 300);
-	hudDisplay.fillText("Altitude: " + (Math.round(plane.plane.position.y * 100) / 100).toString() + "ft", width/2 + 500, height/2  - 300);
-	hudDisplay.fillText("AoA: " + Math.round(plane.aoa * 180 / Math.PI).toString() + " degrees", width/2, height/2  - 300);
+	hudDisplay.fillText((Math.round(plane.airspeed * 1.944 * 100) / 100).toString() + " knots", width/2, height/2 - 100);
+	hudDisplay.fillText("Altitude: " + (Math.round(plane.plane.position.y * 100) / 100).toString() + "ft", width/2, height/2  + 100);
+
+	let angleOfAttack = Math.round(plane.aoa * 180 / Math.PI)
+
+	hudDisplay.fillStyle = "#5bfc5e";
+
+	if (angleOfAttack > 13) {
+		hudDisplay.fillStyle = "#f50505";
+	} else if (angleOfAttack > 10) {
+		hudDisplay.fillStyle = "#f56905";
+	} else if (angleOfAttack > 8) {
+		hudDisplay.fillStyle = "#f9fc1e";
+	}
+
+	hudDisplay.fillText("AoA: " + angleOfAttack.toString() + " degrees", width/2, height/2  - 300);
 	hudTexture.needsUpdate = true;
 	
 	// Render scene
