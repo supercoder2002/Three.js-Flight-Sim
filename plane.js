@@ -28,6 +28,7 @@ class Plane {
 
 		this.targetRotation = new THREE.Quaternion()
 		this.rotation = new THREE.Quaternion()
+		this.mass = 912
 
 		this.onRunway = false
 		this.crashHandler = crashHandler
@@ -120,8 +121,8 @@ class Plane {
 	calculateAoA() {
 		let velocity = new THREE.Vector3().subVectors(this.plane.position, this.oldPos)
 		let lateralSpeed = new THREE.Vector3(velocity.x, 0, velocity.z).length()
-		this.aoa = 0.026 + this.rotation.x - Math.atan2(velocity.y, lateralSpeed)
-		//console.log(velocity)
+		let eulerRotation = new THREE.Euler(0, 0, 0).setFromQuaternion(this.rotation, 'XYZ');
+		this.aoa = 0.026 + eulerRotation.x - Math.atan2(velocity.y, lateralSpeed)
 	}
 
 	changeRotation(rotationChange) {
@@ -150,31 +151,26 @@ class Plane {
 		this.thrustLevel += (this.goalThrustLevel - this.thrustLevel) * 0.1
 
 		var thrustForce = this.thrustLevel * 2255; // max thrust is 2255 N
-		this.acceleration.add(calculateThrust(thrustForce, 762, forward));
+		this.acceleration.add(calculateThrust(thrustForce, this.mass, forward));
 
-		let liftCoefficent = calculateLiftCoefficent(this.aoa)
+		let liftCoefficent = calculateLiftCoefficent(this.aoa, this.flaps)
 
-		var dragAccel = calculateDrag(762, 1.225, this.actualVelocity.length(), 0.029 + 0.046 * this.aoa + 0.05 * (this.flaps/15), 16, backward)
+		var dragAccel = calculateDrag(this.mass, 1.225, this.actualVelocity.length(), 0.029 + 0.046 * Math.abs(this.aoa) + 0.05 * (this.flaps/15), 16, backward)
 		this.acceleration.add(dragAccel);
 		
-		if (this.flaps > 0) {
-			liftCoefficent = liftCoefficent * 2.1 * (this.flaps/30)
-		} else {
-			liftCoefficent = 1.6 * liftCoefficent
-		}
 
-		var liftAccel = calculateLift(762, 1.225, this.actualVelocity, liftCoefficent, 16, new THREE.Vector3(forward.x, forward.z, -forward.y))
+		var liftAccel = calculateLift(this.mass, 1.225, this.actualVelocity, liftCoefficent, 16, new THREE.Vector3(forward.x, forward.z, -forward.y))
 		this.acceleration.add(liftAccel)
 
 		this.acceleration.y += -9.8 
 
 		if (this.onRunway) {
-			let frictionAccel = calculateFriction(this.acceleration.y * 762, 0.01, this.actualVelocity, 762)
+			let frictionAccel = calculateFriction(this.acceleration.y * this.mass, 0.01, this.actualVelocity, this.mass)
 			this.acceleration.add(frictionAccel)
 		}
 		//console.log(this.acceleration, calculateThrust(thrustForce, 7148, forward), liftAccel)
 
-		//console.log(this.acceleration.y)
+		//console.log(0.029 + 0.046 * Math.abs(this.aoa) + 0.05 * (this.flaps/15))
 		//console.log(this.velocity)
 
 		var an = this.acceleration.length()
